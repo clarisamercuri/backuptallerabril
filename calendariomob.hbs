@@ -1,0 +1,397 @@
+<style>
+ 
+.fc .fc-toolbar-title {
+  font-size: 1.5rem;
+};
+.fc .fc-button{
+    padding:0px;
+    font-size:0.75rem;
+}
+div.fc-view-harness.fc-view-harness-active {
+    height: 300px !important;
+}
+div.fc-bg-event.fc-event.fc-event-start.fc-event-end.fc-event-past, div.fc-bg-event.fc-event.fc-event-start.fc-event-end.fc-event-future{
+    font-size: 0.8rem;
+}
+
+
+
+* {
+  font-size: xx-small
+}
+
+
+</style>
+<div class="container">
+  <br/>
+  <div style="text-align:center;font-size:1.25rem">
+    <span class="badge badge-warning" style="color:black">Turno asignado</span>    <span style="color:black" class="badge badge-primary">En reparación</span>    <span style="color:black" class="badge badge-success">Orden finalizada</span>    <span class="badge badge-danger" style="color:black">Orden cancelada</span>    <span class="badge" style="color:#5C1BA8;border-color:#5C1BA8;border: solid thin">Turno particular</span>    <span class="badge" style="color:saddlebrown;border-color:yellowgreen;border: solid thin">Sobreturno</span>
+</div>
+    <br/><br/>
+        <div id='calendar'>
+    </div><br/>
+    
+    <br/>
+      <div class="modal fade" id="nuevoturnoModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+                  <form id="nuevoturno" method="post" action="/nuevoturnoparticularmob" enctype="multipart/form-data">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Nuevo turno particular</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h5>Cargar nuevo turno a clientes no presupuestados.<br/><small>Para cargar un turno a un cliente ya cargado, dirigirse al panel de <a href="/ordenes">órdenes de trabajo</a>.</small></h5>
+            <br/>
+            <div class="form-group">
+                <input type="date" name="fecha_nuevoturno" id="fecha_nuevoturno" class="form-control" placeholder="Fecha del turno" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="nombre_nuevoturno" id="nombre_nuevoturno" class="form-control" placeholder="Nombre" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="dominio_nuevoturno" id="dominio_nuevoturno" class="form-control" placeholder="Dominio" onkeyup="mayus(this);"  required>
+            </div>
+                        <div class="form-group">
+                <input type="text" name="telefono_nuevoturno" id="telefono_nuevoturno" class="form-control" placeholder="Teléfono">
+            </div>
+
+     <div class="form-group">
+<textarea class="form-control" id="obs_nuevoturno" name="obs_nuevoturno" placeholder="Observación (opcional)" rows="3"></textarea>
+            </div>
+          
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" id="subirturno" class="btn btn-primary">Confirmar turno</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+      <div class="modal fade" id="detalleturno" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Detalle de turno</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+            <div class="modal-body">
+              <h4><span id="titular_turno"></span></h4>
+                Fecha del turno: <span id="fecha_turno"></span><br/>
+                Estado: <span id="estado_turno"></span><br/>
+                               <span id="observacion_turno">Observación del sobreturno: <span id="observacion_turno_desc"></span></span><br/>
+
+                
+                <br/>
+                <h5 id="presupuestos">Presupuestos</h5>
+                <div class="col-sm-8">
+  <div class="row" id="presupuesto_0" style="justify-content: flex-start;"></div>
+        <div class="row" style="justify-content: flex-start;" id="presupuesto_A"></div>
+        <div class="row" style="justify-content: flex-start;" id="presupuesto_B"></div>
+        <div class="row" style="justify-content: flex-start;" id="presupuesto_C"></div>
+        <div class="row" style="justify-content: flex-start;" id="presupuesto_D"></div>
+       <div class="row" style="justify-content: flex-start;" id="presupuesto_E"></div>
+</div>
+
+       <br/>
+                <h5 id="ordenes">Ordenes</h5>
+                                <div class="col-sm-8">
+        <div class="row" id="orden_0" style="justify-content: flex-start;"></div>
+        <div class="row" style="justify-content: flex-start;" id="orden_A"></div>
+        <div class="row" style="justify-content: flex-start;" id="orden_B"></div>
+        <div class="row" style="justify-content: flex-start;" id="orden_C"></div>
+        <div class="row" style="justify-content: flex-start;" id="orden_D"></div>
+       <div class="row" style="justify-content: flex-start;" id="orden_E"></div>
+      </div>      </div>
+
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <a class="btn btn-primary" id="modificarturno">Modificar turno</a>
+      </div>
+    </div>
+  </div>
+<
+</div>
+    <div class="modal fade" id="presupuestomodal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Detalle de presupuesto</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="bodypresupuesto">
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="modal fade" id="ordenmodal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Detalle de orden de trabajo</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="bodyorden">
+
+
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+ <script>
+let url = '/calendario.json'
+async function getJson(url) {
+    let response = await fetch(url);
+    let data = await response.json()
+    return data;
+}
+       document.addEventListener('DOMContentLoaded', async function() {
+        var turnos_db = await getJson(url)
+         var turnos = []
+         if (turnos_db[0] != null){
+            for (i=0; i<turnos_db.length; i++){
+             if (turnos_db[i].extendedProps.particular == 1){
+              var turno_nuevo = {
+                title: turnos_db[i].title,
+                start: turnos_db[i].start,
+                allDay: true,
+                particular: true
+              }
+              } else {
+                var turno_nuevo = {
+                title: turnos_db[i].title,
+                start: turnos_db[i].start,
+                allDay: true,
+                
+              }
+              }
+                turnos.push(turno_nuevo)
+            };}
+          
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          timeZone: 'UTC-3',
+          initialView: 'dayGridMonth',
+           headerToolbar: {
+      center: 'addEventButton'
+    },
+
+    customButtons: {
+      addEventButton: {
+        text: 'Nuevo sobreturno',
+        click: function() {
+          $('#nuevoturnoModal').modal('show'); 
+          $('#nuevoturnoModal').on('shown.bs.modal', function (e) {
+          $('#subirturno').click(function(e) {
+            
+            const nuevafecha = $('#fecha_nuevoturno').val();
+            const nuevafechaturno = new Date(nuevafecha + 'T00:00:00');
+            if (!isNaN(nuevafechaturno.valueOf())) { 
+            calendar.addEvent({
+              title: $('#nombre_nuevoturno').val() + ' | ' + $('#dominio_nuevoturno').val(),
+              start: nuevafechaturno,
+              allDay: true,
+              color: '#f0ad4e'
+              
+            });
+             $('#nuevoturno').submit();
+          } else {
+            alert('Hubo un problema, intente nuevamente.');
+            $('#nuevoturnoModal').modal('hide'); 
+          }
+});
+        })
+      },
+      
+    }},
+          eventClick: function(info) {
+            if (info.event._def.ui.display != 'background'){
+
+            if ($(window).width() > 768) {
+                          document.getElementById('modificarturno').setAttribute('href', '/modificarturno/'+info.event.extendedProps.dominio)
+} else if ($(window).width() < 768) {
+                          document.getElementById('modificarturno').setAttribute('href', '/modificarturnomob/'+info.event.extendedProps.dominio)
+
+}
+            $('#fecha_turno').html((info.event.start).toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' }));
+            $('#estado_turno').html((info.event.extendedProps.estado));
+            if (info.event.extendedProps.observacion != null){
+                            $('#observacion_turno_desc').html((info.event.extendedProps.observacion));
+
+              $('#observacion_turno').show();
+            } else {
+              $('#observacion_turno').hide();
+            }
+            if (info.event.extendedProps.particular == 1){
+              $('#titular_turno').html(info.event.title + '  (Particular)');  
+            } else {$('#titular_turno').html(info.event.title)}
+
+          if (info.event.extendedProps.presupuesto_0 != undefined){
+              if (info.event.extendedProps.observacion_0 != null){
+            $('#presupuesto_0').html('<div class="col-6">'+info.event.extendedProps.presupuesto_0 + '.pdf   </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_0+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button><a tabindex="0" id="observacion0" data-trigger="focus" role="button" class="btn btn-info btn-sm" data-toggle="popover" data-placement="right" title="Observación para el taller" data-content="'+info.event.extendedProps.observacion_0+'"><i class="fas fa-search"></i></a></div><br/>');              
+             $('#observacion0').popover()
+$('.popover-dismiss').popover({
+  trigger: 'focus'
+})
+            } else {
+$('#presupuesto_0').html('<div class="col-6">'+info.event.extendedProps.presupuesto_0 + '.pdf   </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_0+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            }
+            }
+            
+            
+             if (info.event.extendedProps.presupuesto_A != undefined){
+                if (info.event.extendedProps.observacion_A != null){
+            $('#presupuesto_A').html('<div class="col-6">'+info.event.extendedProps.presupuesto_A + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_A+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button><a tabindex="0" id="observacionA" data-trigger="focus" role="button" class="btn btn-info btn-sm" data-toggle="popover" data-placement="right" title="Observación para el taller" data-content="'+info.event.extendedProps.observacion_A+'"><i class="fas fa-search"></i></a></div><br/>');              
+             $('#observacionA').popover()
+$('.popover-dismiss').popover({
+  trigger: 'focus'
+})             
+            } else {
+            $('#presupuesto_A').html('<div class="col-6">'+info.event.extendedProps.presupuesto_A + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_A+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            }
+              }
+              if (info.event.extendedProps.presupuesto_B != undefined){
+
+              if (info.event.extendedProps.observacion_B != null){
+            $('#presupuesto_B').html('<div class="col-6">'+info.event.extendedProps.presupuesto_B + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_B+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button><a tabindex="0" id="observacionB" data-trigger="focus" role="button" class="btn btn-info btn-sm" data-toggle="popover" data-placement="right" title="Observación para el taller" data-content="'+info.event.extendedProps.observacion_B+'"><i class="fas fa-search"></i></a></div><br/>');              
+             $('#observacionB').popover()
+$('.popover-dismiss').popover({
+  trigger: 'focus'
+})              
+            } else {
+$('#presupuesto_B').html('<div class="col-6">'+info.event.extendedProps.presupuesto_B + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_B+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button></div><br/>');               
+            } 
+            }if (info.event.extendedProps.presupuesto_C != undefined){
+              var presC = "'"+info.event.extendedProps.presupuesto_C+"'";
+              if (info.event.extendedProps.observacion_C != null){              
+            $('#presupuesto_C').html('<div class="col-6">'+info.event.extendedProps.presupuesto_C + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_C+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button><a tabindex="0" id="observacionC" data-trigger="focus" role="button" class="btn btn-info btn-sm" data-toggle="popover" data-placement="right" title="Observación para el taller" data-content="'+info.event.extendedProps.observacion_C+'"><i class="fas fa-search"></i></a></div><br/>');              
+             $('#observacionC').popover()
+$('.popover-dismiss').popover({
+  trigger: 'focus'
+})            
+            } else {
+             $('#presupuesto_C').html('<div class="col-6">'+info.event.extendedProps.presupuesto_C + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_C+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button></div><br/>');                           
+              }
+              }if (info.event.extendedProps.presupuesto_D != undefined){
+
+             if (info.event.extendedProps.observacion_D != null){              
+            $('#presupuesto_D').html('<div class="col-6">'+info.event.extendedProps.presupuesto_D + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_D+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button><a tabindex="0" id="observacionD" data-trigger="focus" role="button" class="btn btn-info btn-sm" data-toggle="popover" data-placement="right" title="Observación para el taller" data-content="'+info.event.extendedProps.observacion_D+'"><i class="fas fa-search"></i></a></div><br/>');              
+             $('#observacionD').popover()
+$('.popover-dismiss').popover({
+  trigger: 'focus'
+})             
+            } else {
+          $('#presupuesto_D').html('<div class="col-6">'+info.event.extendedProps.presupuesto_D + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_D+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_0+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            }
+           } if (info.event.extendedProps.presupuesto_E != undefined){
+
+                           if (info.event.extendedProps.observacion_E != null){              
+            $('#presupuesto_E').html('<div class="col-6">'+info.event.extendedProps.presupuesto_E + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_E+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button><a tabindex="0" id="observacionE" data-trigger="focus" role="button" class="btn btn-info btn-sm" data-toggle="popover" data-placement="right" title="Observación para el taller" data-content="'+info.event.extendedProps.observacion_E+'"><i class="fas fa-search"></i></a></div><br/>');              
+             $('#observacionE').popover()
+$('.popover-dismiss').popover({
+  trigger: 'focus'
+})           
+            } else {
+            $('#presupuesto_E').html('<div class="col-6">'+info.event.extendedProps.presupuesto_E + '.pdf    </div><div class="col-4"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#presupuestomodal" href="'+info.event.extendedProps.presupuesto_0+'.pdf" onclick="verpdfpresupuesto(`'+info.event.extendedProps.presupuesto_E+'`,`'+info.event.extendedProps.dominio+'`)"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            }
+            }
+
+             if (info.event.extendedProps.orden_0 != undefined){
+            var orden0 = "'"+info.event.extendedProps.orden_0+"'";
+            $('#orden_0').html('<div class="col-sm-9">'+info.event.extendedProps.orden_0 + '    </div><div class="col-sm-3"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#ordenmodal" href="'+info.event.extendedProps.orden_0+'" onclick="verpdforden('+orden0+')"><i class="far fa-file-pdf"></i></button></div></div><br/>');              
+            } if (info.event.extendedProps.orden_A != undefined){
+            var ordenA = "'"+info.event.extendedProps.orden_A+"'";
+            $('#orden_A').html('<div class="col-sm-9">'+info.event.extendedProps.orden_A + '    </div><div class="col-sm-3"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#ordenmodal" href="'+info.event.extendedProps.orden_A+'" onclick="verpdforden('+ordenA+')"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            } if (info.event.extendedProps.orden_B != undefined){
+              var ordenB = "'"+info.event.extendedProps.orden_B+"'";
+            $('#orden_B').html('<div class="col-sm-9">'+info.event.extendedProps.orden_B + '    </div><div class="col-sm-3"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#ordenmodal" href="'+info.event.extendedProps.orden_B+'" onclick="verpdforden('+ordenB+')"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            } if (info.event.extendedProps.orden_C != undefined){
+              var ordenC = "'"+info.event.extendedProps.orden_C+"'";
+            $('#orden_C').html('<div class="col-sm-9">'+info.event.extendedProps.orden_C + '    </div><div class="col-sm-3"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#ordenmodal" href="'+info.event.extendedProps.orden_C+'" onclick="verpdforden('+ordenC+')"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            } if (info.event.extendedProps.orden_D != undefined){
+              var ordenD = "'"+info.event.extendedProps.orden_D+"'";
+            $('#orden_D').html('<div class="col-sm-9">'+info.event.extendedProps.orden_D + '    </div><div class="col-sm-3"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#ordenmodal" href="'+info.event.extendedProps.orden_D+'" onclick="verpdforden('+ordenD+')"><i class="far fa-file-pdf">></i</button></div><br/>');              
+            } if (info.event.extendedProps.orden_E != undefined){
+              var ordenE = "'"+info.event.extendedProps.orden_E+"'";
+            $('#orden_E').html('<div class="col-sm-9">'+info.event.extendedProps.orden_E + '    </div><div class="col-sm-3"><button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#ordenmodal" href="'+info.event.extendedProps.orden_E+'" onclick="verpdforden('+ordenE+')"><i class="far fa-file-pdf"></i></button></div><br/>');              
+            }
+            $('#detalleturno').modal('show'); 
+
+          }
+          
+}        
+        
+        });
+calendar.addEventSource('/calendario.json');
+calendar.addEventSource('/feriados.json');
+calendar.addEventSource('/ordenescompletas.json');
+        calendar.setOption('locale', 'es-us');
+        themeSystem: 'bootstrap';
+
+        calendar.render();
+      });
+ $('#detalleturno').on('hidden.bs.modal', function () {
+   
+
+    $('#presupuesto_0').html('');
+    $('#presupuesto_A').html('');
+    $('#presupuesto_B').html('');
+    $('#presupuesto_C').html('');
+    $('#presupuesto_D').html('');
+    $('#presupuesto_E').html('');
+    $('#orden_0').html('');
+    $('#orden_A').html('');
+    $('#orden_B').html('');
+    $('#orden_C').html('');
+    $('#orden_D').html('');
+    $('#orden_E').html('');
+
+  })
+       $('#presupuestomodal').on('hide.bs.modal', function () {
+    document.getElementById('bodypresupuesto').removeChild(document.getElementById("embedpresupuesto"))
+  })
+    $('#ordenmodal').on('hide.bs.modal', function () {
+    document.getElementById('bodyorden').removeChild(document.getElementById("embedorden"))
+  })
+        function verpdfpresupuesto(t,d){
+    let url = '/pdfpresupuesto/'+d+'/'+t;
+
+    var embedpdf = '<embed width="750" id="embedpresupuesto" height="375" src="'+url+'" type="application/pdf">'
+    document.getElementById('bodypresupuesto').insertAdjacentHTML("beforeend",embedpdf);
+  }
+
+   function verpdforden(string){
+        var srcpdf = 'pdf/ordenes/'+string
+    var embedorden = '<embed width="750" id="embedorden" height="375" src="'+srcpdf+'" type="application/pdf">'
+    document.getElementById('bodyorden').insertAdjacentHTML("beforeend",embedorden);
+  }
+
+
+function mayus(e) {
+    e.value = e.value.toUpperCase();
+}
+
+    </script>
