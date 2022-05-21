@@ -22,19 +22,19 @@ const { isLoggedIn } = require('../lib/auth');
 
 router.get('/detallepresupuesto/:dominio', isLoggedIn, async (req, res) => {
     const { dominio } = req.params;
-    const orden = await pool.query('SELECT *, DATE_FORMAT(fecha_turno, "%d/%m/%y") AS fecha_turno FROM ordenes WHERE dominio = ?', [dominio]);
+    const orden = await pool.query('SELECT *, DATE_FORMAT(fecha_turno_i, "%d/%m/%y") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%d/%m/%y") AS fecha_turno_f FROM ordenes WHERE dominio = ?', [dominio]);
     res.json({orden})
   });
 
   router.get('/detalleregistro/:dominio', isLoggedIn, async (req, res) => {
     const { dominio } = req.params;
-    const presupuestos = await pool.query('SELECT *, DATE_FORMAT(fecha_turno, "%d/%m/%y") AS fecha_turno, DATE_FORMAT(fecha_ingreso, "%d/%m/%y") AS fecha_ingreso FROM presupuestos WHERE dominio = ? AND  numero_pres = 1', [dominio]);
-    const orden = await pool.query('SELECT *, DATE_FORMAT(fecha_turno, "%d/%m/%y") AS fecha_turno FROM ordenes WHERE dominio = ?', [dominio]);
+  const presupuestos = await pool.query('SELECT *,  DATE_FORMAT(fecha_turno_i, "%d/%m/%y") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%d/%m/%y") AS fecha_turno_f, DATE_FORMAT(fecha_ingreso, "%d/%m/%y") AS fecha_ingreso FROM presupuestos WHERE dominio = ? AND  numero_pres = 1', [dominio]);
+    const orden = await pool.query('SELECT *, DATE_FORMAT(fecha_turno_i, "%d/%m/%y") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%d/%m/%y") AS fecha_turno_f FROM ordenes WHERE dominio = ?', [dominio]);
     res.render('links/detalleregistro', { presupuestos, orden });
   });
 
 router.get('/ordenes', isLoggedIn, async (req, res) => {
-    const presupuestos = await pool.query('SELECT *, DATE_FORMAT(fecha_ingreso, "%Y/%m/%d") AS fecha_ingreso, DATE_FORMAT(fecha_turno, "%Y/%m/%d") AS fecha_turno FROM presupuestos WHERE numero_pres = 1');
+ const presupuestos = await pool.query('SELECT *, DATE_FORMAT(fecha_ingreso, "%d/%m/%Y") AS fecha_ingreso, DATE_FORMAT(fecha_turno_i, "%d/%m/%Y") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%d/%m/%Y") AS fecha_turno_f FROM presupuestos WHERE numero_pres = 1');
 
     res.render('links/ordenes', {  presupuestos });
 
@@ -697,43 +697,7 @@ var n_presupuesto = Number(ult_pres[0].n_presupuesto +1);
 await pool.query('INSERT INTO num_presupuestos SET dominio = ?',[dominio]);
 }
 
-const nuevoPresupuesto = {
-     nombre,
-     n_presupuesto,
-     compania: compania,
-     siniestro,
-     telefono,
-     marca,
-     modelo,
-     dominio,
-     color,
-     pieza_reparar,
-     chapa_reparar,
-     pintura_reparar,
-     mecanica_reparar,
-     repuesto_reparar,
-     pieza_cambiar,
-     chapa_cambiar,
-     pintura_cambiar,
-     mecanica_cambiar,
-     repuesto_cambiar,
-     total_presupuesto,
-     franquicia: franquicia || null,
-     fecha_ingreso: new Date().toISOString().slice(0, 19).replace('T', ' '),
-     numero_pres,
-     turno: 0,
-     particular,
-     estado: 'Presupuestada'
-};
 
-let date = new Date()
-
-let day = date.getDate()
-let month = date.getMonth() + 1
-let year = date.getFullYear()
-const fecha_ingreso = day + '-'+ month + '-'+year
-
-  await pool.query('INSERT INTO presupuestos set ?', [nuevoPresupuesto]);
 
 
 var reparar_pdf = ``;
@@ -828,6 +792,50 @@ if (total_pintura == 0){
   if (total_mano == 0){
     total_mano=''
   }
+
+  const total_presupuesto_ars = total_mano + total_repuesto;
+
+  const nuevoPresupuesto = {
+    nombre,
+    n_presupuesto,
+    compania: compania,
+    siniestro,
+    telefono,
+    marca,
+    modelo,
+    dominio,
+    color,
+    pieza_reparar,
+    chapa_reparar,
+    pintura_reparar,
+    mecanica_reparar,
+    repuesto_reparar,
+    pieza_cambiar,
+    chapa_cambiar,
+    pintura_cambiar,
+    mecanica_cambiar,
+    repuesto_cambiar,
+    total_presupuesto: total_presupuesto_ars,
+    franquicia: franquicia || null,
+    fecha_ingreso: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    numero_pres,
+    turno: 0,
+    particular,
+    estado: 'Presupuestada',
+    valor_chapa: config[0].chapa_dia,
+    valor_pintura: config[0].pintura_pano,
+    valor_mecanica: config[0].mecanica_hora
+};
+
+let date = new Date()
+
+let day = date.getDate()
+let month = date.getMonth() + 1
+let year = date.getFullYear()
+const fecha_ingreso = day + '-'+ month + '-'+year
+
+ await pool.query('INSERT INTO presupuestos set ?', [nuevoPresupuesto]);
+
 const pdf = require('html-pdf');
 
 const ruta_pdf = '../taller/src/public/pdf/presupuestos/'+dominio+'/'+n_presupuesto+ '-' +dominio+'.pdf';
@@ -969,7 +977,7 @@ const pdf1 = `
 </tr>
 </table>
 
-    </div></div>   <p style="font-size: 0.65rem">  <span style="float:left">PRESUPUESTO Nº: `+n_presupuesto+`</span> <span style="float:right">TOTAL: $`+total_presupuesto+`.-
+    </div></div>   <p style="font-size: 0.65rem">  <span style="float:left">PRESUPUESTO Nº: `+n_presupuesto+`</span> <span style="float:right">TOTAL: $`+total_presupuesto_ars+`.-
 
     `;
 
@@ -1192,21 +1200,21 @@ if (pieza_cambiar!=null && pieza_cambiar.length>0){
     total_chapa = ''
    var ars_chapa=''
   } else {
-    var ars_chapa = Math.trunc(Number(total_chapa) * Number(config[0].chapa_dia));
+    var ars_chapa = Math.trunc(Number(total_chapa) * Number(presupuesto[0].valor_chapa));
    }
 
    if (total_pintura == 0){
      total_pintura=''
      var ars_pintura=''
     } else {
-     var ars_pintura = Math.trunc(Number(total_pintura) * Number(config[0].pintura_pano));
+     var ars_pintura = Math.trunc(Number(total_pintura) * Number(presupuesto[0].valor_pintura));
    }
 
      if (total_mecanica == 0){
        total_mecanica=''
        var ars_mecanica=''
       } else {
-       var ars_mecanica = Math.trunc(Number(total_mecanica) * Number(config[0].mecanica_hora));
+       var ars_mecanica = Math.trunc(Number(total_mecanica) * Number(presupuesto[0].valor_mecanica));
      }
      if (total_repuesto == 0){
        total_repuesto=''
@@ -1218,6 +1226,8 @@ if (pieza_cambiar!=null && pieza_cambiar.length>0){
      if (total_mano == 0){
        total_mano=''
      }
+
+     const total_presupuesto_ars = total_mano + total_repuesto;
 const pdf = require('html-pdf');
 
    const pdf1 = `
@@ -1358,7 +1368,7 @@ const pdf = require('html-pdf');
  </tr>
  </table>
 
-       </div></div>   <p style="font-size: 0.65rem">  <span style="float:left">PRESUPUESTO Nº: `+presupuesto[0].n_presupuesto+`</span> <span style="float:right">TOTAL: $`+presupuesto[0].total_presupuesto+`.-
+       </div></div>   <p style="font-size: 0.65rem">  <span style="float:left">PRESUPUESTO Nº: `+presupuesto[0].n_presupuesto+`</span> <span style="float:right">TOTAL: $`+total_presupuesto_ars+`.-
 
    `;
 
@@ -1474,21 +1484,21 @@ if (pieza_cambiar!=null && pieza_cambiar.length>0){
     total_chapa = ''
    var ars_chapa=''
   } else {
-    var ars_chapa = Math.trunc(Number(total_chapa) * Number(config[0].chapa_dia));
+    var ars_chapa = Math.trunc(Number(total_chapa) * Number(presupuesto[0].valor_chapa));
    }
 
    if (total_pintura == 0){
      total_pintura=''
      var ars_pintura=''
     } else {
-     var ars_pintura = Math.trunc(Number(total_pintura) * Number(config[0].pintura_pano));
+     var ars_pintura = Math.trunc(Number(total_pintura) * Number(presupuesto[0].valor_pintura));
    }
 
      if (total_mecanica == 0){
        total_mecanica=''
        var ars_mecanica=''
       } else {
-       var ars_mecanica = Math.trunc(Number(total_mecanica) * Number(config[0].mecanica_hora));
+       var ars_mecanica = Math.trunc(Number(total_mecanica) * Number(presupuesto[0].valor_mecanica));
      }
      if (total_repuesto == 0){
        total_repuesto=''
@@ -1500,6 +1510,7 @@ if (pieza_cambiar!=null && pieza_cambiar.length>0){
      if (total_mano == 0){
        total_mano=''
      }
+     const total_presupuesto_ars = total_mano + total_repuesto;
 const pdf = require('html-pdf');
 
    const pdf1 = `
@@ -1641,7 +1652,7 @@ const pdf = require('html-pdf');
  </tr>
  </table>
 
-       </div></div>   <p style="font-size: 0.65rem">  <span style="float:left">PRESUPUESTO Nº: `+presupuesto[0].n_presupuesto+`</span> <span style="float:right">TOTAL: $`+presupuesto[0].total_presupuesto+`.-
+       </div></div>   <p style="font-size: 0.65rem">  <span style="float:left">PRESUPUESTO Nº: `+presupuesto[0].n_presupuesto+`</span> <span style="float:right">TOTAL: $`+total_presupuesto_ars+`.-
 
    `;
 
@@ -1677,13 +1688,23 @@ stream.pipe(res)
 
 
 
-router.post('/nuevoturno',isLoggedIn, async (req, res) => {
-  const { fecha_nuevoturno, nuevoturno_dominio } = req.body;
-  const nuevafechaturno = new Date(fecha_nuevoturno).toISOString().slice(0, 19).replace('T', ' ')
-  const boolturno = 1;
+router.post('/nuevoturno', isLoggedIn,async (req, res) => {
+  
+  const { fecha_nuevoturno_i, fecha_nuevoturno_f, nuevoturno_dominio } = req.body;
+  
+   const boolturno = 1;
+ 
   const estado = "Turno otorgado"
-  await pool.query('UPDATE presupuestos set fecha_turno = ?, turno = ?, estado = ? WHERE dominio = ? AND numero_pres = ?', [nuevafechaturno, boolturno, estado, nuevoturno_dominio, 1]);
-  await pool.query('UPDATE ordenes set fecha_turno = ?, estado = ? WHERE dominio = ?', [nuevafechaturno, estado, nuevoturno_dominio]);
+  const nuevafechaturno_i = new Date(fecha_nuevoturno_i).toISOString().slice(0, 19).replace('T', ' ')
+  if (fecha_nuevoturno_f != '' && fecha_nuevoturno_f != null && fecha_nuevoturno_f != undefined){
+    const nuevafechaturno_f = new Date(fecha_nuevoturno_f).toISOString().slice(0, 19).replace('T', ' ')
+     await pool.query('UPDATE presupuestos set fecha_turno_i = ?, fecha_turno_f = ?, turno = ?, estado = ? WHERE dominio = ? AND numero_pres = ?', [nuevafechaturno_i, nuevafechaturno_f, boolturno, estado, nuevoturno_dominio, 1]);
+   
+ await pool.query('UPDATE ordenes set fecha_turno_i = ?, fecha_turno_f = ?, estado = ? WHERE dominio = ?', [nuevafechaturno_i, nuevafechaturno_f, estado, nuevoturno_dominio]);
+  } else {
+    await pool.query('UPDATE presupuestos set fecha_turno_i = ?, fecha_turno_f = ?, turno = ?, estado = ? WHERE dominio = ? AND numero_pres = ?', [nuevafechaturno_i, nuevafechaturno_i, boolturno, estado, nuevoturno_dominio, 1]);
+    await pool.query('UPDATE ordenes set fecha_turno_i = ?, fecha_turno_f = ?, estado = ? WHERE dominio = ?', [nuevafechaturno_i, nuevafechaturno_i, estado, nuevoturno_dominio]);
+  }
    req.flash('success', 'Turno guardado correctamente');
    res.redirect('/ordenes')
   }
@@ -1693,8 +1714,8 @@ router.post('/nuevoturno',isLoggedIn, async (req, res) => {
 router.post('/eliminarturno',isLoggedIn, async (req, res) => {
   const { eliminarturno_dominio } = req.body;
   const boolturno = 0;
-  await pool.query('UPDATE presupuestos set fecha_turno = ? , estado = ?, turno = ? WHERE dominio = ? AND numero_pres = ?', ["NULL","Presupuestada", boolturno, eliminarturno_dominio, 1]);
-  await pool.query('UPDATE ordenes set fecha_turno = ? AND estado = ? WHERE dominio = ?', ["NULL","Presupuestada", eliminarturno_dominio]);
+  await pool.query('UPDATE presupuestos set fecha_turno_i = ? , fecha_turno_f = ?, estado = ?, turno = ? WHERE dominio = ? AND numero_pres = ?', ["0000-00-00", "0000-00-00","Presupuestada", boolturno, eliminarturno_dominio, 1]);
+  await pool.query('UPDATE ordenes set fecha_turno_i = ?, fecha_turno_f  = ? AND estado = ? WHERE dominio = ?', ["0000-00-00", "0000-00-00","Presupuestada", eliminarturno_dominio]);
    req.flash('success', 'Turno eliminado correctamente');
    res.redirect('/ordenes')
   }
@@ -1708,8 +1729,8 @@ router.post('/eliminarturno/:dominio',isLoggedIn, async (req, res) => {
     await pool.query('DELETE FROM ordenes WHERE dominio = ?', [dominio]);
   } else {
   const boolturno = 0;
-  await pool.query('UPDATE presupuestos set fecha_turno = ? , estado = ?, completa = ?, turno = ? WHERE dominio = ? AND numero_pres = ?', ['0000-00-00',"Presupuestada", 0, boolturno, dominio, 1]);
-  await pool.query('UPDATE ordenes set fecha_turno = ?, completa = ? AND estado = ? WHERE dominio = ?', ['0000-00-00',0,"Presupuestada", dominio]);
+  await pool.query('UPDATE presupuestos set fecha_turno_i = ?, fecha_turno_f = ? , estado = ?, completa = ?, turno = ? WHERE dominio = ? AND numero_pres = ?', ['0000-00-00','0000-00-00',"Presupuestada", 0, boolturno, dominio, 1]);
+  await pool.query('UPDATE ordenes set fecha_turno_i = ?, fecha_turno_f = ?, completa = ? AND estado = ? WHERE dominio = ?', ['0000-00-00','0000-00-00',0,"Presupuestada", dominio]);
 
   }
   const completa = await pool.query('SELECT * FROM ordenes_completas WHERE dominio = ?', [dominio]);
@@ -1887,10 +1908,16 @@ router.get('/ordenescompletas.json', isLoggedIn, async (req, res, next) =>{
   var turnoscompletos_db = []
   if (turnoscompletos.length>=1){
   for (i=0; i<turnoscompletos.length; i++){
+    const fecha_T = (String(turnoscompletos[i].fecha_turno_f.toISOString())).split('T')
+    const dia = fecha_T[0].split('-')
+    const dia_act = String(Number(String((String(turnoscompletos[i].fecha_turno_f.toISOString()).split('-'))[2]).split('T')[0])+1).padStart(2,'0');
 
+    dia[2] = dia_act;
+    var fecha_fin_act = String(dia[0] + '-' + dia[1] + '-' + dia[2] + 'T' + fecha_T[1])
       var turno_nuevo = {
         title: turnoscompletos[i].dominio + ' | ' + turnoscompletos[i].nombre,
-        start: turnoscompletos[i].fecha_turno,
+        start: turnoscompletos[i].fecha_turno_i,
+	end: fecha_fin_act,
         allDay: true,
         color: '#5cb85c',
         textColor: 'black',
@@ -1899,7 +1926,8 @@ router.get('/ordenescompletas.json', isLoggedIn, async (req, res, next) =>{
           'sobreturno': turnoscompletos[i].sobreturno,
           'dominio': turnoscompletos[i].dominio,
           'estado': turnoscompletos[i].estado,
-          'observacion': turnoscompletos[i].obs_particular
+          'observacion': turnoscompletos[i].obs_particular,
+ 'fecha_fin': turnoscompletos[i].fecha_turno_f
         }
 
       }
@@ -1975,15 +2003,43 @@ router.get('/calendario.json', isLoggedIn, async (req, res, next) =>{
     var turnos_db = []
     if (turnos.length>=1){
     for (i=0; i<turnos.length; i++){
+if (turnos[i].fecha_turno_f != null && turnos[i].fecha_turno_f != '0000-00-00') {
+                const fecha_T = (String(turnos[i].fecha_turno_f.toISOString())).split('T')
+      const dia = fecha_T[0].split('-')
+      const dia_act = String(Number(String((String(turnos[i].fecha_turno_f.toISOString()).split('-'))[2]).split('T')[0])+1).padStart(2,'0');
+
+      dia[2] = dia_act;
+      var fecha_fin_act = String(dia[0] + '-' + dia[1] + '-' + dia[2] + 'T' + fecha_T[1])
+}
       if (turnos[i].estado == "Presupuestada"){
         continue
     } else if (turnos[i].estado == "Finalizada"){
-       continue
+             var turno_nuevo = {
+        title: turnos[i].nombre + ' | ' + turnos[i].dominio,
+        start: turnos[i].fecha_turno_i,
+        end: fecha_fin_act,
+        allDay:true,
+        color: '#28a745',
+        textColor: 'black',
+        extendedProps: {
+          'particular': turnos[i].turno_particular,
+          'sobreturno': turnos[i].sobreturno,
+          'dominio': turnos[i].dominio,
+          'estado': turnos[i].estado,
+          'observacion': turnos[i].obs_particular,
+	'fecha_inicio': turnos[i].fecha_turno_i,
+          'fecha_fin': turnos[i].fecha_turno_f
+        }
+
+      }
+      turnos_db.push(turno_nuevo)
+    }  else if (turnos[i].fecha_turno_i == "0000-00-00"){
+      continue
       } else if (turnos[i].estado == "Turno otorgado"){
 
         var turno_nuevo = {
-          title: turnos[i].dominio + ' | ' + turnos[i].nombre,
-          start: turnos[i].fecha_turno,
+          title: turnos[i].nombre + ' | ' + turnos[i].dominio,
+          start: turnos[i].fecha_turno_i,
           allDay: true,
           color: '#f0ad4e',
           textColor: 'black',
@@ -1992,7 +2048,10 @@ router.get('/calendario.json', isLoggedIn, async (req, res, next) =>{
             'sobreturno': turnos[i].sobreturno,
             'dominio': turnos[i].dominio,
             'estado': turnos[i].estado,
-            'observacion': turnos[i].obs_particular
+            'observacion': turnos[i].obs_particular,
+	'fecha_inicio': turnos[i].fecha_turno_i,
+            'fecha_fin': turnos[i].fecha_turno_f
+
           }
 
         }
@@ -2000,8 +2059,8 @@ router.get('/calendario.json', isLoggedIn, async (req, res, next) =>{
 
         } else if (turnos[i].estado == "En reparación"){
             var turno_nuevo = {
-                title: turnos[i].dominio + ' | ' + turnos[i].nombre,
-                start: turnos[i].fecha_turno,
+                title: turnos[i].nombre + ' | ' + turnos[i].dominio,
+                start: turnos[i].fecha_turno_i,
                 allDay: true,
                 color: '#0275d8',
                 textColor: 'black',
@@ -2010,7 +2069,10 @@ router.get('/calendario.json', isLoggedIn, async (req, res, next) =>{
                   'sobreturno': turnos[i].sobreturno,
                   'dominio': turnos[i].dominio,
                   'estado': turnos[i].estado,
-                  'observacion': turnos[i].obs_particular
+                  'observacion': turnos[i].obs_particular,
+	'fecha_inicio': turnos[i].fecha_turno_i,
+		                  'fecha_fin': turnos[i].fecha_turno_f
+
 
                 }
               }
@@ -2018,8 +2080,9 @@ router.get('/calendario.json', isLoggedIn, async (req, res, next) =>{
 
             } else if (turnos[i].estado == "Cancelada"){
                 var turno_nuevo = {
-                    title: turnos[i].dominio + ' | ' + turnos[i].nombre,
-                    start: turnos[i].fecha_turno,
+                    title: turnos[i].nombre + ' | ' + turnos[i].dominio,
+                    start: turnos[i].fecha_turno_i,
+			end: fecha_fin_act,
                     allDay: true,
                     color: '#d9534f',
                     textColor: 'black',
@@ -2028,13 +2091,21 @@ router.get('/calendario.json', isLoggedIn, async (req, res, next) =>{
                       'sobreturno': turnos[i].sobreturno,
                       'dominio': turnos[i].dominio,
                       'estado': turnos[i].estado,
-                      'observacion': turnos[i].obs_particular
+                      'observacion': turnos[i].obs_particular,
+	'fecha_inicio': turnos[i].fecha_turno_i,
+		                  'fecha_fin': turnos[i].fecha_turno_f
+
 
                     }
                   }
                   turnos_db.push(turno_nuevo)
 
             }
+            if (turnos[i].fecha_turno_f ==null){
+              turno_nuevo['end'] = turnos[i].fecha_turno_i;
+            }else{
+turno_nuevo['end'] = fecha_fin_act;
+}
             if (turnos[i].presupuesto_0 !=null){
               turno_nuevo['presupuesto_0'] = turnos[i].presupuesto_0;
               turno_nuevo['observacion_0'] = turnos[i].observacion_0;
@@ -2126,7 +2197,7 @@ router.post('/calendario',isLoggedIn, async (req, res) => {
 });
 
 async function nuevoturnoparticular(req,res){
-  const {fecha_nuevoturno, nombre_nuevoturno, dominio_nuevoturno, telefono_nuevoturno, obs_nuevoturno} = req.body;
+  const {fecha_nuevoturno_i, fecha_nuevoturno_f, nombre_nuevoturno, dominio_nuevoturno, telefono_nuevoturno, obs_nuevoturno} = req.body;
   if (typeof req.file == 'undefined'){
     var archivo = null;
   } else {
@@ -2134,6 +2205,7 @@ async function nuevoturnoparticular(req,res){
   }
 
  if (obs_nuevoturno != ''){
+    if (fecha_nuevoturno_f != '' && fecha_nuevoturno_f != null && fecha_nuevoturno_f != undefined){
   var nuevoTurno = {
     nombre: nombre_nuevoturno,
     dominio: dominio_nuevoturno,
@@ -2141,7 +2213,9 @@ async function nuevoturnoparticular(req,res){
     orden_0: archivo,
    estado: "Turno otorgado",
    sobreturno: 1,
-   fecha_turno: fecha_nuevoturno,
+   fecha_turno_i: fecha_nuevoturno_i,
+   fecha_turno_f: fecha_nuevoturno_f,
+
    fecha_estado: new Date().toISOString().slice(0, 19).replace('T', ' '),
    obs_particular: obs_nuevoturno
 };
@@ -2154,9 +2228,40 @@ async function nuevoturnoparticular(req,res){
       orden_0: archivo,
      estado: "Turno otorgado",
      sobreturno: 1,
-     fecha_turno: fecha_nuevoturno,
+     fecha_turno_i: fecha_nuevoturno_i,
+fecha_turno_f: fecha_nuevoturno_i,
+     fecha_estado: new Date().toISOString().slice(0, 19).replace('T', ' '),
+     obs_particular: obs_nuevoturno
+ };
+  }}
+  else {
+    if (fecha_nuevoturno_f != '' && fecha_nuevoturno_f != null && fecha_nuevoturno_f != undefined){
+      var nuevoTurno = {
+        nombre: nombre_nuevoturno,
+        dominio: dominio_nuevoturno,
+        telefono: telefono_nuevoturno,
+        orden_0: archivo,
+       estado: "Turno otorgado",
+       sobreturno: 1,
+       fecha_turno_i: fecha_nuevoturno_i,
+       fecha_turno_f: fecha_nuevoturno_f,
+       fecha_estado: new Date().toISOString().slice(0, 19).replace('T', ' ')  };
+    
+    } else {
+    var nuevoTurno = {
+      nombre: nombre_nuevoturno,
+      dominio: dominio_nuevoturno,
+      telefono: telefono_nuevoturno,
+      orden_0: archivo,
+     estado: "Turno otorgado",
+     sobreturno: 1,
+     fecha_turno_i: fecha_nuevoturno_i,
+     fecha_turno_f: fecha_nuevoturno_i,
      fecha_estado: new Date().toISOString().slice(0, 19).replace('T', ' ')  };
-  }
+    
+  
+  }}
+  
 
 await pool.query('INSERT INTO ordenes set ?', [nuevoTurno]);
 res.redirect('/calendario')
@@ -2202,33 +2307,33 @@ router.post('/nuevoturnoparticularmob',[upload.single('orden_nuevoturno'), nuevo
 
 router.get('/modificarturno/:dominio', isLoggedIn, async (req, res) => {
   const {dominio} = req.params;
-  const turno = await pool.query('SELECT *, DATE_FORMAT(fecha_turno, "%d/%m/%y") AS fecha_turno FROM ordenes WHERE dominio = ?', [dominio]);
-  const datospresupuesto = await pool.query('SELECT * , DATE_FORMAT(fecha_turno, "%d/%m/%y") AS fecha_turno FROM presupuestos WHERE dominio = ? AND numero_pres = ?', [dominio,1]);
+  const turno = await pool.query('SELECT *, DATE_FORMAT(fecha_turno_i, "%Y-%m-%d") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%Y-%m-%d") AS fecha_turno_f  FROM ordenes WHERE dominio = ?', [dominio]);
+  
+  const datospresupuesto = await pool.query('SELECT * , DATE_FORMAT(fecha_turno_i, "%Y-%m-%d") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%Y-%m-%d") AS fecha_turno_f  FROM presupuestos WHERE dominio = ? AND numero_pres = ?', [dominio,1]);
+
   res.render('links/modificarturno', {turno, datospresupuesto});
 });
 
 
 router.get('/modificarturnomob/:dominio', isLoggedIn, async (req, res) => {
   const {dominio} = req.params;
-  const turno = await pool.query('SELECT *, DATE_FORMAT(fecha_turno, "%d/%m/%y") AS fecha_turno FROM ordenes WHERE dominio = ?', [dominio]);
-  const datospresupuesto = await pool.query('SELECT * , DATE_FORMAT(fecha_turno, "%d/%m/%y") AS fecha_turno FROM presupuestos WHERE dominio = ? AND numero_pres = ?', [dominio,1]);
+ const turno = await pool.query('SELECT *, DATE_FORMAT(fecha_turno_i, "%Y-%m-%d") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%Y-%m-%d") AS fecha_turno_f  FROM ordenes WHERE dominio = ?', [dominio]);
+ const datospresupuesto = await pool.query('SELECT * , DATE_FORMAT(fecha_turno_i, "%Y-%m-%d") AS fecha_turno_i, DATE_FORMAT(fecha_turno_f, "%Y-%m-%d") AS fecha_turno_f  FROM presupuestos WHERE dominio = ? AND numero_pres = ?', [dominio,1]);
   res.render('links/modificarturnomob', {turno, datospresupuesto});
 });
 
 router.post('/actualizarturno/:dominio',isLoggedIn, async (req, res) => {
   const {dominio} = req.params;
-  const { fecha_nuevoturno, estado_nuevoturno } = req.body;
-  if (fecha_nuevoturno == ''){
-    await pool.query('UPDATE presupuestos set estado = ? WHERE dominio = ? AND numero_pres = ?', [estado_nuevoturno, dominio, 1]);
-    await pool.query('UPDATE ordenes set estado = ? WHERE dominio = ?', [estado_nuevoturno, dominio]);
-  } else if (fecha_nuevoturno != ''){
-    await pool.query('UPDATE presupuestos set fecha_turno = ?, estado = ? WHERE dominio = ? AND numero_pres = ?', [fecha_nuevoturno, estado_nuevoturno, dominio, 1]);
-    await pool.query('UPDATE ordenes set fecha_turno = ?, estado = ? WHERE dominio = ?', [fecha_nuevoturno, estado_nuevoturno, dominio]);
-  }
+  const { fecha_nuevoturno_i, fecha_nuevoturno_f, estado_nuevoturno } = req.body;
+  
+ await pool.query('UPDATE presupuestos set fecha_turno_i = ?, fecha_turno_f = ?, estado = ? WHERE dominio = ? AND numero_pres = ?', [fecha_nuevoturno_i, fecha_nuevoturno_f, estado_nuevoturno, dominio, 1]);
+
+await pool.query('UPDATE ordenes set fecha_turno_i = ?, fecha_turno_f = ?, estado = ? WHERE dominio = ?', [fecha_nuevoturno_i, fecha_nuevoturno_f, estado_nuevoturno, dominio]);
+
   if (estado_nuevoturno == 'Finalizada'){
     await pool.query('UPDATE presupuestos set completa = ? WHERE dominio = ? AND numero_pres = ?', [1, dominio, 1]);
     await pool.query('UPDATE ordenes set completa = ? WHERE dominio = ?', [1, dominio]);
-    await pool.query('INSERT INTO ordenes_completas SELECT * FROM ordenes WHERE dominio = ?', [dominio]);
+   
 
 
   } else {
@@ -2236,13 +2341,11 @@ router.post('/actualizarturno/:dominio',isLoggedIn, async (req, res) => {
     await pool.query('UPDATE ordenes set completa = ? WHERE dominio = ?', [0, dominio]);
 
   }
- req.flash('success', 'Turno modificado correctamente');
-    if (req.headers.referer.split('/')[3] == 'modificarturno'){
-    res.redirect('/calendario')
-  } else if (req.headers.referer.split('/')[3] == 'modificarturnomob'){
-    res.redirect('/calendariomob')
+ req.flash('success', 'Turno actualizado correctamente');
 
-  }
+    res.redirect('/calendario')
+
+  
 });
 
 /*CONFIGURACION*/
